@@ -1,0 +1,2282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGPA & CGPA Calculator</title>
+  <style>
+    :root {
+      --ink: #172026;
+      --muted: #60707c;
+      --line: #d8e0e6;
+      --paper: #ffffff;
+      --soft: #f6f8fb;
+      --teal: #0f9f9a;
+      --teal-dark: #08706d;
+      --coral: #ff6b5f;
+      --amber: #f4b942;
+      --navy: #19324d;
+      --shadow: 0 18px 45px rgba(25, 50, 77, 0.12);
+      --radius: 8px;
+    }
+
+    body[data-theme="ocean"] {
+      --teal: #0d99ff;
+      --teal-dark: #0863a8;
+      --coral: #12c2a9;
+      --amber: #ffd166;
+      --navy: #12263a;
+      --soft: #eef8ff;
+    }
+
+    body[data-theme="sunset"] {
+      --teal: #d9480f;
+      --teal-dark: #9a3412;
+      --coral: #e11d48;
+      --amber: #f59e0b;
+      --navy: #2b2130;
+      --soft: #fff7ed;
+    }
+
+    body[data-theme="forest"] {
+      --teal: #15803d;
+      --teal-dark: #166534;
+      --coral: #eab308;
+      --amber: #84cc16;
+      --navy: #123026;
+      --soft: #f1f8f3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(244, 185, 66, 0.22), transparent 26%),
+        radial-gradient(circle at 90% 0%, rgba(255, 107, 95, 0.18), transparent 28%),
+        linear-gradient(135deg, rgba(15, 159, 154, 0.15), transparent 34%),
+        linear-gradient(315deg, rgba(25, 50, 77, 0.09), transparent 30%),
+        var(--soft);
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 44px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .intro,
+    .score-panel,
+    .card,
+    dialog {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(216, 224, 230, 0.9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .intro {
+      border-radius: var(--radius);
+      padding: 28px;
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+      color: white;
+      background:
+        linear-gradient(125deg, rgba(25, 50, 77, 0.98), rgba(8, 112, 109, 0.9) 55%, rgba(255, 107, 95, 0.82)),
+        var(--navy);
+    }
+
+    .intro::after {
+      content: "";
+      position: absolute;
+      right: 22px;
+      bottom: 20px;
+      width: 180px;
+      height: 110px;
+      background:
+        linear-gradient(90deg, var(--teal), var(--amber) 52%, var(--coral));
+      clip-path: polygon(0 76%, 18% 42%, 35% 58%, 54% 18%, 74% 37%, 100% 0, 100% 100%, 0 100%);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .visual-strip {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 7px;
+      width: min(360px, 100%);
+      margin-top: 22px;
+      align-items: end;
+      min-height: 72px;
+    }
+
+    .visual-strip span {
+      display: block;
+      border-radius: 7px 7px 2px 2px;
+      background: linear-gradient(180deg, var(--coral), var(--teal));
+      min-height: 18px;
+      animation: rise 2.4s ease-in-out infinite;
+      box-shadow: 0 12px 22px rgba(15, 159, 154, 0.18);
+    }
+
+    .visual-strip span:nth-child(1) { height: 34px; animation-delay: 0s; }
+    .visual-strip span:nth-child(2) { height: 58px; animation-delay: 0.12s; }
+    .visual-strip span:nth-child(3) { height: 42px; animation-delay: 0.24s; }
+    .visual-strip span:nth-child(4) { height: 68px; animation-delay: 0.36s; }
+    .visual-strip span:nth-child(5) { height: 50px; animation-delay: 0.48s; }
+    .visual-strip span:nth-child(6) { height: 74px; animation-delay: 0.6s; }
+
+    @keyframes rise {
+      0%, 100% { transform: scaleY(0.78); opacity: 0.78; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+
+    .eyebrow {
+      color: #ffe08a;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin: 12px 0 10px;
+      font-size: clamp(2rem, 5vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      max-width: 680px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 1.02rem;
+      line-height: 1.55;
+    }
+
+    .hero-actions,
+    .toolbar,
+    .row-actions,
+    .summary-grid,
+    .dialog-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .hero-actions {
+      margin-top: 22px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      min-height: 42px;
+      padding: 0 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--ink);
+      background: #e9eef2;
+      cursor: pointer;
+      font-weight: 750;
+      transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(25, 50, 77, 0.13);
+    }
+
+    .btn.primary {
+      background: var(--teal);
+      color: white;
+    }
+
+    .btn.warn {
+      background: var(--coral);
+      color: white;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+    }
+
+    .icon-btn {
+      width: 40px;
+      min-width: 40px;
+      padding: 0;
+      border-radius: 8px;
+    }
+
+    .score-panel {
+      border-radius: var(--radius);
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 251, 0.9)),
+        var(--paper);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-top: 5px solid var(--amber);
+      pointer-events: none;
+    }
+
+    .score-number {
+      font-size: clamp(2.4rem, 8vw, 5rem);
+      line-height: 1;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--navy), var(--teal), var(--coral));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .score-label {
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .mini-results {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .score-canvas-wrap {
+      width: min(220px, 100%);
+      aspect-ratio: 1;
+      justify-self: center;
+      display: grid;
+      place-items: center;
+      margin: 4px 0;
+    }
+
+    #scoreCanvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .mini {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 12px;
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 1.35rem;
+      color: var(--teal-dark);
+    }
+
+    .mini span {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .card {
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
+        var(--paper);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .section-head p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .settings {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .previous-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .previous-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.4fr) minmax(110px, 0.8fr) minmax(110px, 0.8fr) 42px;
+      gap: 10px;
+      align-items: end;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      padding: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input,
+    select {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      color: var(--ink);
+      padding: 0 11px;
+      outline: none;
+      transition: border 150ms ease, box-shadow 150ms ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 4px rgba(15, 159, 154, 0.13);
+    }
+
+    .semester {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .semester-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: linear-gradient(90deg, rgba(15, 159, 154, 0.1), rgba(244, 185, 66, 0.13));
+      border-bottom: 1px solid var(--line);
+    }
+
+    .semester-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .semester-title input {
+      max-width: 250px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      height: 34px;
+      border-radius: 999px;
+      background: var(--navy);
+      color: white;
+      font-weight: 850;
+      font-size: 0.86rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.74rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      background: #fbfcfd;
+    }
+
+    td input,
+    td select {
+      height: 38px;
+    }
+
+    .subject-name {
+      min-width: 190px;
+    }
+
+    .num {
+      max-width: 100px;
+    }
+
+    .grade-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      height: 30px;
+      border-radius: 999px;
+      color: white;
+      background: var(--teal-dark);
+      font-weight: 850;
+    }
+
+    .semester-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 13px 14px;
+    }
+
+    .summary-grid {
+      align-items: stretch;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .semester-result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .semester-result-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      padding: 14px;
+      box-shadow: 0 10px 22px rgba(25, 50, 77, 0.08);
+    }
+
+    .semester-result-card h3 {
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 1rem;
+    }
+
+    .semester-result-card strong {
+      display: block;
+      font-size: 2rem;
+      color: var(--teal-dark);
+      line-height: 1;
+    }
+
+    .semester-result-card span {
+      display: block;
+      color: var(--muted);
+      font-weight: 750;
+      margin-top: 6px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .chart-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 248, 251, 0.92));
+      padding: 14px;
+      min-height: 292px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      box-shadow: 0 12px 28px rgba(25, 50, 77, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: linear-gradient(90deg, var(--teal), var(--amber), var(--coral));
+    }
+
+    .chart-card h3 {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .chart-card canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(15, 159, 154, 0.06), rgba(255, 255, 255, 0));
+    }
+
+    .subject-performance {
+      display: grid;
+      gap: 10px;
+      max-height: 220px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .tabulation-wrap {
+      overflow-x: auto;
+      border: 1px solid #171717;
+      background: white;
+    }
+
+    .tabulation {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    .tabulation th,
+    .tabulation td {
+      border: 2px solid #171717;
+      padding: 7px 6px;
+      text-align: center;
+      background: #f7f7f7;
+      color: #111;
+    }
+
+    .tabulation .left-cell {
+      background: #d9d9d9;
+      font-weight: 850;
+      text-align: center;
+      min-width: 150px;
+    }
+
+    .tabulation .sub-cell {
+      background: #eeeeee;
+      font-weight: 850;
+      min-width: 88px;
+    }
+
+    .tabulation .name-cell {
+      background: #d0d0d0;
+      font-weight: 850;
+      min-width: 180px;
+    }
+
+    .meter-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(160px, 2fr) 54px;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 750;
+    }
+
+    .meter {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e9eef2;
+    }
+
+    .meter span {
+      display: block;
+      height: 100%;
+      width: var(--value, 0%);
+      background: linear-gradient(90deg, var(--teal), var(--amber), var(--coral));
+      border-radius: inherit;
+      transition: width 220ms ease;
+    }
+
+    .summary-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: white;
+    }
+
+    .summary-item strong {
+      display: block;
+      font-size: 1.5rem;
+      color: var(--navy);
+    }
+
+    .summary-item span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    dialog {
+      width: min(620px, calc(100% - 32px));
+      border: 0;
+      border-radius: var(--radius);
+      color: var(--ink);
+      padding: 0;
+    }
+
+    dialog::backdrop {
+      background: rgba(10, 20, 30, 0.4);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-body h2 {
+      margin: 0 0 12px;
+    }
+
+    .grade-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .grade-row {
+      display: grid;
+      grid-template-columns: 1fr 90px;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .dialog-actions {
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+      padding: 14px 20px;
+      background: #fbfcfd;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: var(--navy);
+      color: white;
+      padding: 12px 14px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      font-weight: 750;
+      max-width: min(360px, calc(100% - 36px));
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 880px) {
+      .hero,
+      .settings,
+      .charts-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .meter-row {
+        grid-template-columns: 1fr;
+      }
+
+      .semester-top,
+      .section-head,
+      .semester-foot,
+      .previous-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .previous-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .semester-title {
+        flex-wrap: wrap;
+      }
+
+      .semester-title input {
+        max-width: none;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .hero-actions,
+      .toolbar,
+      .row-actions,
+      .icon-btn,
+      .btn,
+      dialog,
+      .toast {
+        display: none !important;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .intro,
+      .score-panel,
+      .card,
+      .semester {
+        box-shadow: none;
+        border-color: #cad2d8;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="intro">
+        <div>
+          <div class="eyebrow">Manual Marks Entry</div>
+          <h1>SGPA & CGPA Calculator</h1>
+          <p>Enter every subject, credit, and mark manually. The calculator converts marks to grade points, calculates semester SGPA, overall CGPA, percentage estimate, and exports a neat PDF report.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn primary" id="addSemesterTop" type="button" title="Add semester">+ Semester</button>
+          <button class="btn" id="downloadPdfTop" type="button" title="Download PDF report">Download PDF</button>
+          <button class="btn ghost" id="printPage" type="button" title="Print page">Print</button>
+        </div>
+        <div class="visual-strip" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <aside class="score-panel" aria-label="Overall results">
+        <div>
+          <div class="score-label">Overall CGPA</div>
+          <div class="score-number" id="cgpaDisplay">0.00</div>
+        </div>
+        <div class="score-canvas-wrap">
+          <canvas id="scoreCanvas" width="260" height="260" aria-label="CGPA gauge"></canvas>
+        </div>
+        <div class="mini-results">
+          <div class="mini">
+            <strong id="percentageDisplay">0%</strong>
+            <span>Percentage</span>
+          </div>
+          <div class="mini">
+            <strong id="creditsDisplay">0</strong>
+            <span>Total Credits</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Student & Calculator Settings</h2>
+          <p>Adjust the grading scale and percentage formula to match your college rules.</p>
+        </div>
+        <button class="btn ghost" id="gradeSettingsBtn" type="button" title="Edit grade scale">Grade Scale</button>
+      </div>
+      <div class="settings">
+        <label>
+          Student Name
+          <input id="studentName" type="text" placeholder="Your name">
+        </label>
+        <label>
+          Register / Roll No.
+          <input id="rollNumber" type="text" placeholder="Roll number">
+        </label>
+        <label>
+          Course / Branch
+          <input id="courseName" type="text" placeholder="B.Tech CSE">
+        </label>
+        <label>
+          Percentage Formula
+          <select id="percentageFormula">
+            <option value="cgpa10">CGPA x 10</option>
+            <option value="cgpa95">(CGPA - 0.5) x 10</option>
+            <option value="manual">Manual percentage only</option>
+          </select>
+        </label>
+        <label>
+          Website Theme
+          <select id="themeSelect">
+            <option value="aurora">Aurora Teal</option>
+            <option value="ocean">Ocean Blue</option>
+            <option value="sunset">Sunset Red</option>
+            <option value="forest">Forest Green</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Previous SGPA for CGPA</h2>
+          <p>Enter already completed semester SGPA and credits here. These are used only for CGPA.</p>
+        </div>
+        <button class="btn primary" id="addPreviousSgpa" type="button" title="Add previous SGPA">+ Previous SGPA</button>
+      </div>
+      <div class="previous-list" id="previousSgpaList"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Semesters & Subjects</h2>
+          <p>Add semesters and subjects, then enter marks and credits for each subject.</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn primary" id="addSemester" type="button" title="Add semester">+ Semester</button>
+          <button class="btn" id="downloadPdf" type="button" title="Download PDF report">Download PDF</button>
+          <button class="btn warn" id="resetAll" type="button" title="Reset calculator">Reset</button>
+        </div>
+      </div>
+      <div id="semesters"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Interactive Graphics</h2>
+          <p>Charts update instantly as you enter marks, credits, and subjects.</p>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>SGPA Trend</h3>
+          <canvas id="sgpaChart" width="640" height="260" aria-label="SGPA trend chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Marks by Semester</h3>
+          <canvas id="marksChart" width="640" height="260" aria-label="Marks by semester chart"></canvas>
+        </div>
+        <div class="chart-card" style="grid-column: 1 / -1;">
+          <h3>Subject Performance</h3>
+          <div class="subject-performance" id="subjectPerformance"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Semester Wise Result</h2>
+          <p>SGPA is shown separately for each semester. CGPA combines all semester SGPAs by credits.</p>
+        </div>
+      </div>
+      <div class="semester-result-grid" id="semesterWiseResults"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Final Summary</h2>
+          <p>Use these values for quick checking before downloading the report.</p>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <strong id="summaryCgpa">0.00</strong>
+          <span>CGPA</span>
+        </div>
+        <div class="summary-item">
+          <strong id="summarySgpa">0.00</strong>
+          <span>Latest SGPA</span>
+        </div>
+        <div class="summary-item">
+          <strong id="summaryMarks">0 / 0</strong>
+          <span>Total Marks</span>
+        </div>
+        <div class="summary-item">
+          <strong id="summarySubjects">0</strong>
+          <span>Subjects</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Tabulation Register Format</h2>
+          <p>This preview follows the college-style format and is used for the PDF download.</p>
+        </div>
+      </div>
+      <div class="tabulation-wrap" id="tabulationPreview"></div>
+    </section>
+  </main>
+
+  <dialog id="gradeDialog">
+    <form method="dialog">
+      <div class="modal-body">
+        <h2>Grade Scale</h2>
+        <p style="color: var(--muted); margin: 0;">Minimum marks are checked from highest to lowest. Edit these values if your university uses a different rule.</p>
+        <div class="grade-grid" id="gradeGrid"></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn ghost" value="cancel" type="submit">Close</button>
+        <button class="btn primary" id="saveGrades" value="default" type="submit">Save Scale</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const state = {
+      grades: [
+        { label: "O", min: 90, point: 10 },
+        { label: "A+", min: 80, point: 9 },
+        { label: "A", min: 70, point: 8 },
+        { label: "B+", min: 60, point: 7 },
+        { label: "B", min: 50, point: 6 },
+        { label: "C", min: 45, point: 5 },
+        { label: "P", min: 40, point: 4 },
+        { label: "F", min: 0, point: 0 }
+      ],
+      semesters: [],
+      previousSgpas: []
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const semestersEl = $("#semesters");
+    const previousSgpaEl = $("#previousSgpaList");
+    const toastEl = $("#toast");
+
+    const uid = () => Math.random().toString(36).slice(2, 10);
+    const numeric = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+    const clamp = (value, min, max) => Math.min(Math.max(numeric(value), min), max);
+    const fmt = (value, digits = 2) => numeric(value).toFixed(digits);
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toastEl.classList.remove("show"), 2200);
+    }
+
+    function defaultSubject(index) {
+      return {
+        id: uid(),
+        name: `Subject ${index}`,
+        credits: 3,
+        marks: "",
+        maxMarks: 100,
+        manualPoint: ""
+      };
+    }
+
+    function addSemester() {
+      const number = state.semesters.length + 1;
+      state.semesters.push({
+        id: uid(),
+        name: `Semester ${number}`,
+        subjects: [defaultSubject(1), defaultSubject(2), defaultSubject(3), defaultSubject(4), defaultSubject(5)]
+      });
+      render();
+      showToast("Semester added");
+    }
+
+    function ensureTwoSemesters() {
+      while (state.semesters.length < 2) {
+        const number = state.semesters.length + 1;
+        state.semesters.push({
+          id: uid(),
+          name: `Semester ${number}`,
+          subjects: [defaultSubject(1), defaultSubject(2), defaultSubject(3), defaultSubject(4), defaultSubject(5)]
+        });
+      }
+    }
+
+    function defaultPreviousSgpa(index) {
+      return {
+        id: uid(),
+        name: `Previous Semester ${index}`,
+        sgpa: "",
+        credits: ""
+      };
+    }
+
+    function addPreviousSgpa() {
+      state.previousSgpas.push(defaultPreviousSgpa(state.previousSgpas.length + 1));
+      renderPreviousSgpas();
+      refreshDynamicResults();
+      saveLocal();
+      showToast("Previous SGPA row added");
+    }
+
+    function removePreviousSgpa(id) {
+      state.previousSgpas = state.previousSgpas.filter((item) => item.id !== id);
+      renderPreviousSgpas();
+      refreshDynamicResults();
+      saveLocal();
+    }
+
+    function addSubject(semesterId) {
+      const semester = state.semesters.find((item) => item.id === semesterId);
+      semester.subjects.push(defaultSubject(semester.subjects.length + 1));
+      render();
+    }
+
+    function removeSemester(semesterId) {
+      state.semesters = state.semesters.filter((semester) => semester.id !== semesterId);
+      render();
+      showToast("Semester removed");
+    }
+
+    function removeSubject(semesterId, subjectId) {
+      const semester = state.semesters.find((item) => item.id === semesterId);
+      semester.subjects = semester.subjects.filter((subject) => subject.id !== subjectId);
+      render();
+    }
+
+    function gradeForMarks(marks, maxMarks) {
+      const percent = maxMarks > 0 ? (numeric(marks) / numeric(maxMarks)) * 100 : 0;
+      if (marks === "" || percent < 40) return { label: "F", point: 0 };
+      const point = halfPointGrade(percent);
+      return { label: point.toFixed(1), point };
+    }
+
+    function hasEnteredScore(subject) {
+      return subject.marks !== "" || (subject.manualPoint !== "" && subject.manualPoint !== null);
+    }
+
+    function halfPointGrade(percent) {
+      return clamp(Math.ceil((percent / 10) * 2) / 2, 0, 10);
+    }
+
+    function pointForSubject(subject) {
+      if (subject.manualPoint !== "" && subject.manualPoint !== null) {
+        return clamp(subject.manualPoint, 0, 10);
+      }
+      if (subject.marks === "") {
+        return 0;
+      }
+      const subjectMax = numeric(subject.maxMarks) > 0 ? numeric(subject.maxMarks) : 100;
+      const percent = (numeric(subject.marks) / subjectMax) * 100;
+      if (percent < 40) return 0;
+      return halfPointGrade(percent);
+    }
+
+    function semesterResult(semester) {
+      let credits = 0;
+      let weighted = 0;
+      let marks = 0;
+      let maxMarks = 0;
+
+      semester.subjects.forEach((subject) => {
+        const credit = clamp(subject.credits, 0, 99);
+        if (!hasEnteredScore(subject) || credit <= 0) return;
+
+        const subjectMax = numeric(subject.maxMarks) > 0 ? numeric(subject.maxMarks) : 100;
+        credits += credit;
+        weighted += credit * pointForSubject(subject);
+        if (subject.marks !== "") {
+          marks += clamp(subject.marks, 0, subjectMax);
+          maxMarks += subjectMax;
+        }
+      });
+
+      return {
+        credits,
+        sgpa: credits ? weighted / credits : 0,
+        marks,
+        maxMarks,
+        subjects: semester.subjects.filter((subject) => hasEnteredScore(subject) && clamp(subject.credits, 0, 99) > 0).length
+      };
+    }
+
+    function overallResult() {
+      let credits = 0;
+      let weighted = 0;
+      let marks = 0;
+      let maxMarks = 0;
+      let subjects = 0;
+      let latestSgpa = 0;
+
+      state.previousSgpas.forEach((item) => {
+        const sgpa = clamp(item.sgpa, 0, 10);
+        const previousCredits = clamp(item.credits, 0, 999);
+        if (item.sgpa === "" || previousCredits <= 0) return;
+        credits += previousCredits;
+        weighted += sgpa * previousCredits;
+      });
+
+      state.semesters.forEach((semester) => {
+        const result = semesterResult(semester);
+        credits += result.credits;
+        weighted += result.sgpa * result.credits;
+        marks += result.marks;
+        maxMarks += result.maxMarks;
+        subjects += result.subjects;
+        latestSgpa = result.sgpa;
+      });
+
+      const cgpa = credits ? weighted / credits : 0;
+      const percentage = percentageFromCgpa(cgpa, marks, maxMarks);
+      return { credits, cgpa, percentage, marks, maxMarks, subjects, latestSgpa };
+    }
+
+    function percentageFromCgpa(cgpa, marks, maxMarks) {
+      const formula = $("#percentageFormula").value;
+      if (formula === "cgpa95") return Math.max(0, (cgpa - 0.5) * 10);
+      if (formula === "manual") return maxMarks ? (marks / maxMarks) * 100 : 0;
+      return cgpa * 10;
+    }
+
+    function updateStateFromInput(input) {
+      const semesterId = input.dataset.semester;
+      const subjectId = input.dataset.subject;
+      const field = input.dataset.field;
+
+      if (semesterId && !subjectId) {
+        const semester = state.semesters.find((item) => item.id === semesterId);
+        semester[field] = input.value;
+      }
+
+      if (semesterId && subjectId) {
+        const semester = state.semesters.find((item) => item.id === semesterId);
+        const subject = semester.subjects.find((item) => item.id === subjectId);
+        subject[field] = input.type === "number" && input.value !== "" ? Number(input.value) : input.value;
+      }
+
+      refreshDynamicResults();
+      saveLocal();
+    }
+
+    function render() {
+      if (!state.semesters.length) {
+        semestersEl.innerHTML = `<div class="empty">No semester yet. Add a semester to start calculating.</div>`;
+      } else {
+        semestersEl.innerHTML = state.semesters.map(renderSemester).join("");
+      }
+      renderPreviousSgpas();
+      bindDynamicEvents();
+      updateResults();
+      saveLocal();
+    }
+
+    function renderPreviousSgpas() {
+      if (!previousSgpaEl) return;
+      if (!state.previousSgpas.length) {
+        previousSgpaEl.innerHTML = `<div class="empty">No previous SGPA added. Add rows only if you already have old semester SGPA values.</div>`;
+        return;
+      }
+
+      previousSgpaEl.innerHTML = state.previousSgpas.map((item) => `
+        <div class="previous-row">
+          <label>
+            Semester Name
+            <input data-previous="${item.id}" data-field="name" value="${escapeHtml(item.name)}" placeholder="Semester 1">
+          </label>
+          <label>
+            SGPA
+            <input type="number" min="0" max="10" step="0.01" data-previous="${item.id}" data-field="sgpa" value="${item.sgpa}" placeholder="8.50">
+          </label>
+          <label>
+            Credits
+            <input type="number" min="0" step="0.5" data-previous="${item.id}" data-field="credits" value="${item.credits}" placeholder="22">
+          </label>
+          <button class="btn warn icon-btn" data-action="remove-previous" data-previous="${item.id}" type="button" title="Remove previous SGPA">×</button>
+        </div>
+      `).join("");
+
+      previousSgpaEl.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", () => updatePreviousInput(input));
+      });
+      previousSgpaEl.querySelectorAll("[data-action='remove-previous']").forEach((button) => {
+        button.addEventListener("click", () => removePreviousSgpa(button.dataset.previous));
+      });
+    }
+
+    function updatePreviousInput(input) {
+      const item = state.previousSgpas.find((previous) => previous.id === input.dataset.previous);
+      if (!item) return;
+      item[input.dataset.field] = input.type === "number" && input.value !== "" ? Number(input.value) : input.value;
+      refreshDynamicResults();
+      saveLocal();
+    }
+
+    function renderSemester(semester) {
+      const result = semesterResult(semester);
+      return `
+        <article class="semester">
+          <div class="semester-top">
+            <div class="semester-title">
+              <input data-semester="${semester.id}" data-field="name" value="${escapeHtml(semester.name)}" aria-label="Semester name">
+              <span class="badge" data-semester-sgpa="${semester.id}">SGPA ${fmt(result.sgpa)}</span>
+            </div>
+            <div class="row-actions">
+              <button class="btn" data-action="add-subject" data-semester="${semester.id}" type="button" title="Add subject">+ Subject</button>
+              <button class="btn warn icon-btn" data-action="remove-semester" data-semester="${semester.id}" type="button" title="Remove semester">×</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>Credits</th>
+                  <th>Marks</th>
+                  <th>Max</th>
+                  <th>Grade</th>
+                  <th>Point</th>
+                  <th>Manual Point</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${semester.subjects.map((subject) => renderSubject(semester.id, subject)).join("")}
+              </tbody>
+            </table>
+          </div>
+          <div class="semester-foot">
+            <strong data-semester-marks="${semester.id}">${escapeHtml(semester.name)} total: ${fmt(result.marks, 0)} / ${fmt(result.maxMarks, 0)} marks</strong>
+            <span class="score-label" data-semester-credits="${semester.id}">${result.credits} credits</span>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderSubject(semesterId, subject) {
+      const grade = gradeForMarks(subject.marks, subject.maxMarks);
+      const point = pointForSubject(subject);
+      const pending = !hasEnteredScore(subject);
+      return `
+        <tr>
+          <td><input class="subject-name" data-semester="${semesterId}" data-subject="${subject.id}" data-field="name" value="${escapeHtml(subject.name)}" aria-label="Subject name"></td>
+          <td><input class="num" type="number" min="0" step="0.5" data-semester="${semesterId}" data-subject="${subject.id}" data-field="credits" value="${subject.credits}" aria-label="Credits"></td>
+          <td><input class="num" type="number" min="0" step="0.01" data-semester="${semesterId}" data-subject="${subject.id}" data-field="marks" value="${subject.marks}" aria-label="Marks scored"></td>
+          <td><input class="num" type="number" min="1" step="1" data-semester="${semesterId}" data-subject="${subject.id}" data-field="maxMarks" value="${subject.maxMarks}" aria-label="Maximum marks"></td>
+          <td><span class="grade-pill" data-grade-pill="${subject.id}">${pending ? "--" : escapeHtml(grade.label)}</span></td>
+          <td><strong data-point-label="${subject.id}">${pending ? "--" : fmt(point)}</strong></td>
+          <td><input class="num" type="number" min="0" max="10" step="0.01" data-semester="${semesterId}" data-subject="${subject.id}" data-field="manualPoint" value="${subject.manualPoint}" placeholder="Auto" aria-label="Manual grade point"></td>
+          <td><button class="btn ghost icon-btn" data-action="remove-subject" data-semester="${semesterId}" data-subject="${subject.id}" type="button" title="Remove subject">×</button></td>
+        </tr>
+      `;
+    }
+
+    function bindDynamicEvents() {
+      semestersEl.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", () => updateStateFromInput(input));
+      });
+      semestersEl.querySelectorAll("button[data-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const action = button.dataset.action;
+          if (action === "add-subject") addSubject(button.dataset.semester);
+          if (action === "remove-subject") removeSubject(button.dataset.semester, button.dataset.subject);
+          if (action === "remove-semester") removeSemester(button.dataset.semester);
+        });
+      });
+    }
+
+    function updateResults() {
+      const result = overallResult();
+      $("#cgpaDisplay").textContent = fmt(result.cgpa);
+      $("#percentageDisplay").textContent = `${fmt(result.percentage)}%`;
+      $("#creditsDisplay").textContent = fmt(result.credits, 1).replace(".0", "");
+      $("#summaryCgpa").textContent = fmt(result.cgpa);
+      $("#summarySgpa").textContent = fmt(result.latestSgpa);
+      $("#summaryMarks").textContent = `${fmt(result.marks, 0)} / ${fmt(result.maxMarks, 0)}`;
+      $("#summarySubjects").textContent = result.subjects;
+      renderSemesterWiseResults();
+      drawDashboard(result);
+    }
+
+    function renderSemesterWiseResults() {
+      const target = $("#semesterWiseResults");
+      if (!target) return;
+      if (!state.semesters.length) {
+        target.innerHTML = `<div class="empty">Add semesters to see separate SGPA results.</div>`;
+        return;
+      }
+
+      target.innerHTML = state.semesters.map((semester) => {
+        const result = semesterResult(semester);
+        const cp = result.sgpa * result.credits;
+        return `
+          <div class="semester-result-card">
+            <h3>${escapeHtml(semester.name)}</h3>
+            <strong>${fmt(result.sgpa)}</strong>
+            <span>SGPA</span>
+            <span>Credits: ${fmt(result.credits, 1).replace(".0", "")}</span>
+            <span>Credit Points: ${fmt(cp)}</span>
+          </div>
+        `;
+      }).join("") + `
+        <div class="semester-result-card">
+          <h3>Overall CGPA</h3>
+          <strong>${fmt(overallResult().cgpa)}</strong>
+          <span>Combined weighted average of all semesters</span>
+        </div>
+      `;
+    }
+
+    function getThemeColor(name) {
+      return getComputedStyle(document.body).getPropertyValue(name).trim();
+    }
+
+    function drawDashboard(result) {
+      drawGauge(result.cgpa);
+      drawSgpaChart();
+      drawMarksChart();
+      drawSubjectPerformance();
+      renderTabulationPreview();
+    }
+
+    function activeSemesterForRegister() {
+      return state.semesters.find((semester) => semester.subjects.some(hasEnteredScore)) || state.semesters[0] || { name: "Semester 1", subjects: [] };
+    }
+
+    function subjectPercent(subject) {
+      const max = numeric(subject.maxMarks) > 0 ? numeric(subject.maxMarks) : 100;
+      return max ? (numeric(subject.marks) / max) * 100 : 0;
+    }
+
+    function subjectTotal(subject) {
+      return subject.marks === "" ? "" : fmt(clamp(subject.marks, 0, numeric(subject.maxMarks) || 100), 0);
+    }
+
+    function subjectResult(subject) {
+      if (!hasEnteredScore(subject)) return "";
+      return subjectPercent(subject) >= 40 || subject.manualPoint !== "" ? "Pass" : "Fail";
+    }
+
+    function overallPassFail() {
+      const subjects = activeSemesterForRegister().subjects.filter(hasEnteredScore);
+      return subjects.length && subjects.every((subject) => subjectResult(subject) === "Pass") ? "PASS" : "FAIL";
+    }
+
+    function renderTabulationPreview() {
+      const target = $("#tabulationPreview");
+      if (!target) return;
+      const semester = activeSemesterForRegister();
+      const subjects = semester.subjects.slice(0, 8);
+      const sem = semesterResult(semester);
+      const overall = overallResult();
+      const totalMax = subjects.reduce((sum, subject) => sum + (numeric(subject.maxMarks) || 0), 0);
+      const totalMarks = subjects.reduce((sum, subject) => sum + (subject.marks === "" ? 0 : numeric(subject.marks)), 0);
+      const cpTotal = subjects.reduce((sum, subject) => hasEnteredScore(subject) ? sum + clamp(subject.credits, 0, 99) * pointForSubject(subject) : sum, 0);
+      const subjectHeaders = subjects.map((subject) => `<th class="sub-cell">${escapeHtml(subject.name || "SUB")}</th>`).join("");
+      const cells = (fn) => subjects.map((subject) => `<td>${fn(subject)}</td>`).join("");
+
+      target.innerHTML = `
+        <table class="tabulation">
+          <tr>
+            <td class="left-cell" colspan="2">Tabulation Register</td>
+            <td class="sub-cell">Sub</td>
+            ${subjectHeaders}
+            <th class="sub-cell">Total</th>
+          </tr>
+          <tr>
+            <td class="left-cell">USN</td>
+            <td class="name-cell">${escapeHtml($("#rollNumber").value || "USN")}</td>
+            <td class="sub-cell">Marks</td>
+            ${cells((subject) => subjectTotal(subject))}
+            <td>${fmt(totalMarks, 0)}</td>
+          </tr>
+          <tr>
+            <td class="left-cell" colspan="2">${escapeHtml($("#studentName").value || "Student Name")}</td>
+            <td class="sub-cell">Max</td>
+            ${cells((subject) => fmt(numeric(subject.maxMarks), 0))}
+            <td>${fmt(totalMax, 0)}</td>
+          </tr>
+          <tr>
+            <td class="left-cell">SGPA</td>
+            <td class="left-cell">${fmt(sem.sgpa)}</td>
+            <td class="sub-cell">Cr.</td>
+            ${cells((subject) => fmt(clamp(subject.credits, 0, 99), 1).replace(".0", ""))}
+            <td>${fmt(sem.credits, 1).replace(".0", "")}</td>
+          </tr>
+          <tr>
+            <td class="left-cell">CGPA</td>
+            <td class="left-cell">${fmt(overall.cgpa)}</td>
+            <td class="sub-cell">GP</td>
+            ${cells((subject) => hasEnteredScore(subject) ? fmt(pointForSubject(subject)) : "")}
+            <td></td>
+          </tr>
+          <tr>
+            <td class="left-cell" colspan="2">Result: ${overallPassFail()}</td>
+            <td class="sub-cell">CP</td>
+            ${cells((subject) => hasEnteredScore(subject) ? fmt(clamp(subject.credits, 0, 99) * pointForSubject(subject)) : "")}
+            <td>${fmt(cpTotal)}</td>
+          </tr>
+          <tr>
+            <td class="left-cell" colspan="2">Term Grade: ${overallPassFail() === "PASS" ? "P (Pass)" : "F (Fail)"}</td>
+            <td class="sub-cell">Letter Grade</td>
+            ${cells((subject) => subjectResult(subject) === "Fail" ? "F" : "")}
+            <td></td>
+          </tr>
+          <tr>
+            <td class="left-cell" colspan="2">Semester: ${escapeHtml(semester.name)}</td>
+            <td class="sub-cell">Result</td>
+            ${cells((subject) => subjectResult(subject))}
+            <td></td>
+          </tr>
+        </table>
+      `;
+    }
+
+    function clearCanvas(canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return ctx;
+    }
+
+    function drawGauge(cgpa) {
+      const canvas = $("#scoreCanvas");
+      if (!canvas) return;
+      const ctx = clearCanvas(canvas);
+      const center = canvas.width / 2;
+      const radius = 94;
+      const start = Math.PI * 0.78;
+      const end = Math.PI * 2.22;
+      const progress = clamp(cgpa, 0, 10) / 10;
+      const teal = getThemeColor("--teal");
+      const coral = getThemeColor("--coral");
+      const navy = getThemeColor("--navy");
+
+      ctx.lineWidth = 22;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#e7edf2";
+      ctx.beginPath();
+      ctx.arc(center, center, radius, start, end);
+      ctx.stroke();
+
+      const gradient = ctx.createLinearGradient(38, 38, 220, 220);
+      gradient.addColorStop(0, teal);
+      gradient.addColorStop(1, coral);
+      ctx.strokeStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(center, center, radius, start, start + (end - start) * progress);
+      ctx.stroke();
+
+      ctx.fillStyle = navy;
+      ctx.font = "900 42px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(fmt(cgpa), center, center - 6);
+      ctx.fillStyle = getThemeColor("--muted");
+      ctx.font = "800 13px Inter, sans-serif";
+      ctx.fillText("CGPA / 10", center, center + 32);
+    }
+
+    function drawSgpaChart() {
+      const canvas = $("#sgpaChart");
+      if (!canvas) return;
+      const ctx = clearCanvas(canvas);
+      const previous = state.previousSgpas
+        .filter((item) => item.sgpa !== "" && clamp(item.credits, 0, 999) > 0)
+        .map((item) => ({
+          label: item.name,
+          value: clamp(item.sgpa, 0, 10)
+        }));
+      const current = state.semesters.map((semester) => ({
+        label: semester.name,
+        value: semesterResult(semester).sgpa
+      }));
+      const data = [...previous, ...current];
+      drawLineChart(ctx, canvas, data, 10, "SGPA");
+    }
+
+    function drawMarksChart() {
+      const canvas = $("#marksChart");
+      if (!canvas) return;
+      const ctx = clearCanvas(canvas);
+      const data = state.semesters.map((semester) => {
+        const result = semesterResult(semester);
+        return {
+          label: semester.name,
+          value: result.maxMarks ? (result.marks / result.maxMarks) * 100 : 0
+        };
+      });
+      drawBarChart(ctx, canvas, data);
+    }
+
+    function drawLineChart(ctx, canvas, data, maxValue, unit) {
+      const pad = 42;
+      const width = canvas.width - pad * 2;
+      const height = canvas.height - pad * 2;
+      drawGrid(ctx, canvas, pad);
+
+      if (!data.length) {
+        drawEmptyChart(ctx, canvas, "Add marks to see the chart");
+        return;
+      }
+
+      const points = data.map((item, index) => {
+        const x = data.length === 1 ? pad + width / 2 : pad + (width / (data.length - 1)) * index;
+        const y = pad + height - (clamp(item.value, 0, maxValue) / maxValue) * height;
+        return { x, y, ...item };
+      });
+      const teal = getThemeColor("--teal");
+      const coral = getThemeColor("--coral");
+      const navy = getThemeColor("--navy");
+      const gradient = ctx.createLinearGradient(pad, 0, canvas.width - pad, 0);
+      gradient.addColorStop(0, teal);
+      gradient.addColorStop(1, coral);
+
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+
+      points.forEach((point) => {
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = teal;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = navy;
+        ctx.font = "800 12px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(fmt(point.value), point.x, point.y - 17);
+      });
+
+      drawAxisLabels(ctx, canvas, data, unit);
+    }
+
+    function drawBarChart(ctx, canvas, data) {
+      const pad = 42;
+      const width = canvas.width - pad * 2;
+      const height = canvas.height - pad * 2;
+      drawGrid(ctx, canvas, pad);
+
+      if (!data.length) {
+        drawEmptyChart(ctx, canvas, "Add marks to see the chart");
+        return;
+      }
+
+      const teal = getThemeColor("--teal");
+      const amber = getThemeColor("--amber");
+      const navy = getThemeColor("--navy");
+      const barGap = 18;
+      const barWidth = Math.max(28, (width - barGap * (data.length - 1)) / data.length);
+
+      data.forEach((item, index) => {
+        const value = clamp(item.value, 0, 100);
+        const x = pad + index * (barWidth + barGap);
+        const barHeight = (value / 100) * height;
+        const y = pad + height - barHeight;
+        const gradient = ctx.createLinearGradient(0, y, 0, pad + height);
+        gradient.addColorStop(0, amber);
+        gradient.addColorStop(1, teal);
+        ctx.fillStyle = gradient;
+        roundRect(ctx, x, y, barWidth, barHeight, 8);
+        ctx.fill();
+        ctx.fillStyle = navy;
+        ctx.font = "800 12px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`${fmt(value, 0)}%`, x + barWidth / 2, y - 9);
+      });
+
+      drawAxisLabels(ctx, canvas, data, "Marks %");
+    }
+
+    function drawGrid(ctx, canvas, pad) {
+      const muted = getThemeColor("--muted");
+      ctx.strokeStyle = "#e7edf2";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = pad + ((canvas.height - pad * 2) / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(canvas.width - pad, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = muted;
+      ctx.font = "700 11px Inter, sans-serif";
+    }
+
+    function drawAxisLabels(ctx, canvas, data, unit) {
+      const pad = 42;
+      const width = canvas.width - pad * 2;
+      const height = canvas.height - pad * 2;
+      ctx.fillStyle = getThemeColor("--muted");
+      ctx.font = "800 11px Inter, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(unit, pad, 22);
+      ctx.textAlign = "center";
+      data.forEach((item, index) => {
+        const x = data.length === 1 ? pad + width / 2 : pad + (width / (data.length - 1)) * index;
+        ctx.fillText(String(item.label).slice(0, 12), x, pad + height + 24);
+      });
+    }
+
+    function drawEmptyChart(ctx, canvas, message) {
+      ctx.fillStyle = getThemeColor("--muted");
+      ctx.font = "800 16px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      const safeHeight = Math.max(height, 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + safeHeight);
+      ctx.lineTo(x, y + safeHeight);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function drawSubjectPerformance() {
+      const target = $("#subjectPerformance");
+      if (!target) return;
+      const rows = [];
+      state.semesters.forEach((semester) => {
+        semester.subjects.forEach((subject) => {
+          if (!hasEnteredScore(subject)) return;
+          const max = numeric(subject.maxMarks);
+          const value = subject.marks !== "" && max ? clamp((numeric(subject.marks) / max) * 100, 0, 100) : pointForSubject(subject) * 10;
+          rows.push({
+            name: `${semester.name}: ${subject.name || "Subject"}`,
+            value
+          });
+        });
+      });
+
+      if (!rows.length) {
+        target.innerHTML = `<div class="empty">Subject performance will appear here.</div>`;
+        return;
+      }
+
+      target.innerHTML = rows.map((row) => `
+        <div class="meter-row">
+          <span>${escapeHtml(row.name)}</span>
+          <div class="meter"><span style="--value: ${fmt(row.value)}%;"></span></div>
+          <strong>${fmt(row.value, 0)}%</strong>
+        </div>
+      `).join("");
+    }
+
+    function refreshDynamicResults() {
+      state.semesters.forEach((semester) => {
+        const result = semesterResult(semester);
+        const sgpa = document.querySelector(`[data-semester-sgpa="${semester.id}"]`);
+        const marks = document.querySelector(`[data-semester-marks="${semester.id}"]`);
+        const credits = document.querySelector(`[data-semester-credits="${semester.id}"]`);
+        if (sgpa) sgpa.textContent = `SGPA ${fmt(result.sgpa)}`;
+        if (marks) marks.textContent = `${semester.name} total: ${fmt(result.marks, 0)} / ${fmt(result.maxMarks, 0)} marks`;
+        if (credits) credits.textContent = `${result.credits} credits`;
+
+        semester.subjects.forEach((subject) => {
+          const grade = gradeForMarks(subject.marks, subject.maxMarks);
+          const pending = !hasEnteredScore(subject);
+          const pill = document.querySelector(`[data-grade-pill="${subject.id}"]`);
+          const point = document.querySelector(`[data-point-label="${subject.id}"]`);
+          if (pill) pill.textContent = pending ? "--" : grade.label;
+          if (point) point.textContent = pending ? "--" : fmt(pointForSubject(subject));
+        });
+      });
+      updateResults();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function saveLocal() {
+      const payload = {
+        grades: state.grades,
+        semesters: state.semesters,
+        previousSgpas: state.previousSgpas,
+        studentName: $("#studentName").value,
+        rollNumber: $("#rollNumber").value,
+        courseName: $("#courseName").value,
+        percentageFormula: $("#percentageFormula").value,
+        theme: $("#themeSelect").value
+      };
+      localStorage.setItem("sgpa-cgpa-calculator", JSON.stringify(payload));
+    }
+
+    function loadLocal() {
+      const saved = localStorage.getItem("sgpa-cgpa-calculator");
+      if (!saved) return false;
+      try {
+        const payload = JSON.parse(saved);
+        state.grades = Array.isArray(payload.grades) ? payload.grades : state.grades;
+        state.semesters = Array.isArray(payload.semesters) ? payload.semesters : [];
+        ensureTwoSemesters();
+        state.previousSgpas = Array.isArray(payload.previousSgpas) ? payload.previousSgpas : [];
+        $("#studentName").value = payload.studentName || "";
+        $("#rollNumber").value = payload.rollNumber || "";
+        $("#courseName").value = payload.courseName || "";
+        $("#percentageFormula").value = payload.percentageFormula || "cgpa10";
+        $("#themeSelect").value = payload.theme || "aurora";
+        setTheme($("#themeSelect").value);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function setTheme(theme) {
+      document.body.dataset.theme = theme || "aurora";
+      $("#themeSelect").value = theme || "aurora";
+      drawDashboard(overallResult());
+    }
+
+    function openGradeDialog() {
+      const grid = $("#gradeGrid");
+      grid.innerHTML = state.grades.map((grade, index) => `
+        <div class="grade-row">
+          <label>
+            ${escapeHtml(grade.label)} minimum %
+            <input type="number" min="0" max="100" step="1" data-grade-index="${index}" data-grade-field="min" value="${grade.min}">
+          </label>
+          <label>
+            Point
+            <input type="number" min="0" max="10" step="0.01" data-grade-index="${index}" data-grade-field="point" value="${grade.point}">
+          </label>
+        </div>
+      `).join("");
+      $("#gradeDialog").showModal();
+    }
+
+    function saveGrades() {
+      $("#gradeGrid").querySelectorAll("input").forEach((input) => {
+        const grade = state.grades[Number(input.dataset.gradeIndex)];
+        grade[input.dataset.gradeField] = numeric(input.value);
+      });
+      render();
+      showToast("Grade scale saved");
+    }
+
+    function resetAll() {
+      const ok = confirm("Reset all student, semester, subject, and marks data?");
+      if (!ok) return;
+      localStorage.removeItem("sgpa-cgpa-calculator");
+      state.semesters = [];
+      state.previousSgpas = [];
+      $("#studentName").value = "";
+      $("#rollNumber").value = "";
+      $("#courseName").value = "";
+      $("#percentageFormula").value = "cgpa10";
+      setTheme("aurora");
+      ensureTwoSemesters();
+      render();
+      renderPreviousSgpas();
+      showToast("Calculator reset");
+    }
+
+    function pdfEscape(text) {
+      return String(text ?? "").replace(/[\\()]/g, "\\$&");
+    }
+
+    function downloadPdf() {
+      const doc = createTabulationPdf();
+      const blob = new Blob([doc], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const name = ($("#studentName").value || "sgpa-cgpa-report").trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      link.href = url;
+      link.download = `${name || "sgpa-cgpa-report"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast("PDF downloaded");
+    }
+
+    function collectReportData() {
+      const result = overallResult();
+      const previous = state.previousSgpas
+        .filter((item) => item.sgpa !== "" && clamp(item.credits, 0, 999) > 0)
+        .map((item) => ({
+          name: item.name,
+          sgpa: clamp(item.sgpa, 0, 10),
+          credits: clamp(item.credits, 0, 999),
+          marks: 0,
+          maxMarks: 0,
+          subjects: "Previous"
+        }));
+      const calculated = state.semesters.map((semester) => ({ ...semesterResult(semester), name: semester.name }));
+      const semesters = [...previous, ...calculated];
+      const subjects = [];
+
+      state.semesters.forEach((semester) => {
+        semester.subjects.forEach((subject) => {
+          if (!hasEnteredScore(subject) || clamp(subject.credits, 0, 99) <= 0) return;
+          const grade = subject.marks === "" ? { label: "Manual" } : gradeForMarks(subject.marks, subject.maxMarks);
+          subjects.push({
+            semester: semester.name,
+            name: subject.name || "-",
+            credits: subject.credits || 0,
+            marks: subject.marks || 0,
+            maxMarks: subject.maxMarks || 0,
+            grade: grade.label,
+            point: pointForSubject(subject)
+          });
+        });
+      });
+
+      return {
+        result,
+        semesters,
+        subjects,
+        student: $("#studentName").value || "-",
+        roll: $("#rollNumber").value || "-",
+        course: $("#courseName").value || "-",
+        date: new Date().toLocaleDateString()
+      };
+    }
+
+    function createTabulationPdf() {
+      const objects = [];
+      const fontObject = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+      const boldFontObject = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+      const pageWidth = 842;
+      const pageHeight = 595;
+      const c = [];
+      const semester = activeSemesterForRegister();
+      const subjects = semester.subjects.filter(hasEnteredScore).slice(0, 8);
+      const displaySubjects = subjects.length ? subjects : semester.subjects.slice(0, 8);
+      const sem = semesterResult(semester);
+      const overall = overallResult();
+      const result = overallPassFail();
+      const totalMarks = displaySubjects.reduce((sum, subject) => sum + (subject.marks === "" ? 0 : numeric(subject.marks)), 0);
+      const totalMax = displaySubjects.reduce((sum, subject) => sum + (numeric(subject.maxMarks) || 0), 0);
+      const cpTotal = displaySubjects.reduce((sum, subject) => hasEnteredScore(subject) ? sum + clamp(subject.credits, 0, 99) * pointForSubject(subject) : sum, 0);
+
+      rect(c, 0, 0, pageWidth, pageHeight, "FFFFFF");
+      text(c, `Tabulation Register for ${$("#courseName").value || "Course"}`, 30, 564, 12, "B", "4C7EA6");
+      text(c, `Semester : ${semester.name}`, 545, 564, 11, "B", "4C7EA6");
+      text(c, `Exam Month : ${new Date().toLocaleDateString()}`, 660, 564, 10, "B", "111111");
+
+      const x = 30;
+      const yTop = 515;
+      const rowH = 25;
+      const leftW = 166;
+      const labelW = 88;
+      const totalW = 58;
+      const subjectW = (pageWidth - x * 2 - leftW - labelW - totalW) / Math.max(1, displaySubjects.length);
+
+      function fillCell(cx, cy, cw, ch, value, opts = {}) {
+        rect(c, cx, cy, cw, ch, opts.fill || "F2F2F2");
+        strokeRect(c, cx, cy, cw, ch, "111111", 1.4);
+        if (value !== undefined && value !== null) {
+          const fontSize = opts.size || 8;
+          const tx = cx + (opts.center === false ? 5 : Math.max(4, cw * 0.08));
+          const ty = cy + ch / 2 - fontSize / 3;
+          text(c, String(value), tx, ty, fontSize, opts.bold ? "B" : "R", opts.color || "111111");
+        }
+      }
+
+      function subjectCells(rowY, mapper) {
+        displaySubjects.forEach((subject, index) => {
+          fillCell(x + leftW + labelW + index * subjectW, rowY, subjectW, rowH, mapper(subject), { fill: "F7F7F7", size: 8, bold: false });
+        });
+      }
+
+      fillCell(x, yTop, leftW, rowH * 2, `USN: ${$("#rollNumber").value || "-"}`, { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop + rowH, labelW, rowH, "Sub", { fill: "EFEFEF", bold: true });
+      displaySubjects.forEach((subject, index) => {
+        fillCell(x + leftW + labelW + index * subjectW, yTop + rowH, subjectW, rowH, subject.name || `SUB${index + 1}`, { fill: "EFEFEF", bold: true, size: 7 });
+      });
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop + rowH, totalW, rowH, "Total", { fill: "EFEFEF", bold: true });
+
+      fillCell(x, yTop - rowH, leftW, rowH, $("#studentName").value || "Student Name", { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH, labelW, rowH, "Marks", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH, (subject) => subject.marks === "" ? "" : fmt(numeric(subject.marks), 0));
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH, totalW, rowH, fmt(totalMarks, 0), { fill: "F7F7F7", bold: true });
+
+      fillCell(x, yTop - rowH * 2, leftW, rowH, `SGPA        ${fmt(sem.sgpa)}`, { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH * 2, labelW, rowH, "Cr.", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH * 2, (subject) => fmt(clamp(subject.credits, 0, 99), 1).replace(".0", ""));
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 2, totalW, rowH, fmt(sem.credits, 1).replace(".0", ""), { fill: "F7F7F7", bold: true });
+
+      fillCell(x, yTop - rowH * 3, leftW, rowH, `CGPA        ${fmt(overall.cgpa)}`, { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH * 3, labelW, rowH, "GP", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH * 3, (subject) => hasEnteredScore(subject) ? fmt(pointForSubject(subject)) : "");
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 3, totalW, rowH, "", { fill: "F7F7F7" });
+
+      fillCell(x, yTop - rowH * 4, leftW, rowH, `Result: ${result}`, { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH * 4, labelW, rowH, "CP", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH * 4, (subject) => hasEnteredScore(subject) ? fmt(clamp(subject.credits, 0, 99) * pointForSubject(subject)) : "");
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 4, totalW, rowH, fmt(cpTotal), { fill: "F7F7F7", bold: true });
+
+      fillCell(x, yTop - rowH * 5, leftW, rowH, `Class`, { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH * 5, labelW, rowH, "Total", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH * 5, (subject) => subject.marks === "" ? "" : fmt(numeric(subject.marks), 0));
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 5, totalW, rowH, fmt(totalMarks, 0), { fill: "F7F7F7", bold: true });
+
+      fillCell(x, yTop - rowH * 6, leftW, rowH, `Term Grade: ${result === "PASS" ? "P (Pass)" : "F (Fail)"}`, { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH * 6, labelW, rowH, "Max Total", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH * 6, (subject) => fmt(numeric(subject.maxMarks), 0));
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 6, totalW, rowH, fmt(totalMax, 0), { fill: "F7F7F7", bold: true });
+
+      fillCell(x, yTop - rowH * 7, leftW, rowH, "M.C.No", { fill: "D8D8D8", bold: true, center: false });
+      fillCell(x + leftW, yTop - rowH * 7, labelW, rowH, "Letter Grade", { fill: "EFEFEF", bold: true, size: 7 });
+      subjectCells(yTop - rowH * 7, (subject) => subjectResult(subject) === "Fail" ? "F" : "");
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 7, totalW, rowH, "", { fill: "F7F7F7" });
+
+      fillCell(x, yTop - rowH * 8, leftW, rowH, "", { fill: "D8D8D8" });
+      fillCell(x + leftW, yTop - rowH * 8, labelW, rowH, "Result", { fill: "EFEFEF", bold: true });
+      subjectCells(yTop - rowH * 8, (subject) => subjectResult(subject));
+      fillCell(x + leftW + labelW + displaySubjects.length * subjectW, yTop - rowH * 8, totalW, rowH, "", { fill: "F7F7F7" });
+
+      text(c, "Formula: GP = ceil((Marks / Max Marks x 10) to nearest 0.5); Fail below 40%; CP = Credits x GP; SGPA = Total CP / Total Credits.", 30, 54, 8, "R", "333333");
+
+      const content = c.join("\n");
+      const contentObject = addObject(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+      const pageObject = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObject} 0 R /F2 ${boldFontObject} 0 R >> >> /Contents ${contentObject} 0 R >>`);
+      const pagesObject = addObject("");
+      const catalogObject = addObject(`<< /Type /Catalog /Pages ${pagesObject} 0 R >>`);
+      objects[pagesObject - 1] = `<< /Type /Pages /Kids [${pageObject} 0 R] /Count 1 >>`;
+      objects[pageObject - 1] = objects[pageObject - 1].replace("/Parent 0 0 R", `/Parent ${pagesObject} 0 R`);
+
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      objects.forEach((object, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+      });
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach((offset) => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+      });
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObject} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      return pdf;
+
+      function addObject(content) {
+        objects.push(content);
+        return objects.length;
+      }
+    }
+
+    function createDesignedPdf() {
+      const report = collectReportData();
+      const objects = [];
+      const fontObject = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+      const boldFontObject = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+      const pageWidth = 595;
+      const pageHeight = 842;
+      const c = [];
+      const teal = hexToPdfColor(getThemeColor("--teal") || "#0f9f9a");
+      const navy = hexToPdfColor(getThemeColor("--navy") || "#19324d");
+      const coral = hexToPdfColor(getThemeColor("--coral") || "#ff6b5f");
+      const amber = hexToPdfColor(getThemeColor("--amber") || "#f4b942");
+
+      rect(c, 0, 0, pageWidth, pageHeight, "F7F9FC");
+      rect(c, 0, 742, pageWidth, 100, navy.hex);
+      rect(c, 0, 742, 178, 100, teal.hex);
+      rect(c, 417, 742, 178, 100, coral.hex);
+      circle(c, 500, 805, 46, amber.hex);
+      text(c, "SGPA & CGPA REPORT", 34, 803, 22, "B", "FFFFFF");
+      text(c, "One page academic performance summary", 34, 781, 10, "R", "E7EEF5");
+      text(c, `Student: ${report.student}`, 34, 754, 10, "B", "FFFFFF");
+      text(c, `Roll No.: ${report.roll}`, 230, 754, 10, "R", "FFFFFF");
+      text(c, `Course: ${report.course}`, 365, 754, 10, "R", "FFFFFF");
+
+      summaryCard(c, 34, 656, 118, 64, "CGPA", fmt(report.result.cgpa), teal.hex);
+      summaryCard(c, 166, 656, 118, 64, "Percentage", `${fmt(report.result.percentage)}%`, coral.hex);
+      summaryCard(c, 298, 656, 118, 64, "Credits", fmt(report.result.credits, 1).replace(".0", ""), amber.hex);
+      summaryCard(c, 430, 656, 130, 64, "Marks", `${fmt(report.result.marks, 0)}/${fmt(report.result.maxMarks, 0)}`, navy.hex);
+
+      drawPdfGauge(c, 98, 545, 58, report.result.cgpa, teal.hex, coral.hex, navy.hex);
+      text(c, "CGPA Gauge", 58, 461, 12, "B", "19324D");
+      drawPdfSgpaChart(c, 188, 474, 170, 134, report.semesters, teal.hex, coral.hex);
+      drawPdfMarksChart(c, 390, 474, 160, 134, report.semesters, amber.hex, teal.hex);
+
+      text(c, "Semester Summary", 34, 432, 13, "B", "19324D");
+      tableHeader(c, 34, 407, 526, ["Semester", "SGPA", "Credits", "Marks", "Subjects"]);
+      report.semesters.slice(0, 6).forEach((semester, index) => {
+        const y = 383 - index * 22;
+        tableRow(c, 34, y, 526, [
+          semester.name,
+          fmt(semester.sgpa),
+          fmt(semester.credits, 1).replace(".0", ""),
+          semester.maxMarks ? `${fmt(semester.marks, 0)}/${fmt(semester.maxMarks, 0)}` : "Manual SGPA",
+          String(semester.subjects)
+        ], index);
+      });
+
+      text(c, "Subject Details", 34, 244, 13, "B", "19324D");
+      tableHeader(c, 34, 219, 526, ["Subject", "Sem", "Cr", "Marks", "Grade", "Point"]);
+      report.subjects.slice(0, 8).forEach((subject, index) => {
+        const y = 195 - index * 19;
+        tableRow(c, 34, y, 526, [
+          subject.name,
+          subject.semester,
+          String(subject.credits),
+          `${subject.marks}/${subject.maxMarks}`,
+          subject.grade,
+          fmt(subject.point)
+        ], index, 9);
+      });
+      if (report.subjects.length > 8) {
+        text(c, `+ ${report.subjects.length - 8} more subjects included in calculator data`, 36, 38, 9, "R", "60707C");
+      }
+      text(c, `Generated on ${report.date}`, 430, 38, 9, "R", "60707C");
+
+      const content = c.join("\n");
+      const contentObject = addObject(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+      const pageObject = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObject} 0 R /F2 ${boldFontObject} 0 R >> >> /Contents ${contentObject} 0 R >>`);
+
+      const pagesObject = addObject("");
+      const catalogObject = addObject(`<< /Type /Catalog /Pages ${pagesObject} 0 R >>`);
+      objects[pagesObject - 1] = `<< /Type /Pages /Kids [${pageObject} 0 R] /Count 1 >>`;
+      objects[pageObject - 1] = objects[pageObject - 1].replace("/Parent 0 0 R", `/Parent ${pagesObject} 0 R`);
+
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      objects.forEach((object, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+      });
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach((offset) => {
+        pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+      });
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObject} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      return pdf;
+
+      function addObject(content) {
+        objects.push(content);
+        return objects.length;
+      }
+    }
+
+    function hexToPdfColor(hex) {
+      const clean = String(hex).replace("#", "").slice(0, 6).padEnd(6, "0");
+      return {
+        hex: clean.toUpperCase(),
+        rgb: [0, 2, 4].map((index) => parseInt(clean.slice(index, index + 2), 16) / 255)
+      };
+    }
+
+    function color(c, hex) {
+      const rgb = hexToPdfColor(hex).rgb;
+      c.push(`${fmt(rgb[0], 3)} ${fmt(rgb[1], 3)} ${fmt(rgb[2], 3)} rg`);
+      c.push(`${fmt(rgb[0], 3)} ${fmt(rgb[1], 3)} ${fmt(rgb[2], 3)} RG`);
+    }
+
+    function rect(c, x, y, w, h, hex) {
+      color(c, hex);
+      c.push(`${x} ${y} ${w} ${h} re f`);
+    }
+
+    function strokeLine(c, x1, y1, x2, y2, hex, width = 1) {
+      color(c, hex);
+      c.push(`${width} w ${x1} ${y1} m ${x2} ${y2} l S`);
+    }
+
+    function strokeRect(c, x, y, w, h, hex, width = 1) {
+      color(c, hex);
+      c.push(`${width} w ${x} ${y} ${w} ${h} re S`);
+    }
+
+    function circle(c, x, y, r, hex) {
+      color(c, hex);
+      const k = 0.5522847498 * r;
+      c.push(`${x + r} ${y} m ${x + r} ${y + k} ${x + k} ${y + r} ${x} ${y + r} c ${x - k} ${y + r} ${x - r} ${y + k} ${x - r} ${y} c ${x - r} ${y - k} ${x - k} ${y - r} ${x} ${y - r} c ${x + k} ${y - r} ${x + r} ${y - k} ${x + r} ${y} c f`);
+    }
+
+    function text(c, value, x, y, size, font = "R", hex = "172026") {
+      color(c, hex);
+      c.push("BT");
+      c.push(`/${font === "B" ? "F2" : "F1"} ${size} Tf`);
+      c.push(`${x} ${y} Td`);
+      c.push(`(${pdfEscape(String(value).slice(0, 72))}) Tj`);
+      c.push("ET");
+    }
+
+    function summaryCard(c, x, y, w, h, label, value, accent) {
+      rect(c, x, y, w, h, "FFFFFF");
+      rect(c, x, y + h - 6, w, 6, accent);
+      strokeLine(c, x, y, x + w, y, "D8E0E6");
+      text(c, label, x + 12, y + 42, 9, "B", "60707C");
+      text(c, value, x + 12, y + 16, 18, "B", "19324D");
+    }
+
+    function drawPdfGauge(c, cx, cy, radius, cgpa, teal, coral, navy) {
+      circle(c, cx, cy, radius + 15, "FFFFFF");
+      color(c, "E7EDF2");
+      c.push(`12 w ${cx - radius} ${cy} m ${cx - radius / 2} ${cy + radius} ${cx + radius / 2} ${cy + radius} ${cx + radius} ${cy} c S`);
+      color(c, teal);
+      c.push(`12 w ${cx - radius} ${cy} m ${cx - radius / 2} ${cy + radius * clamp(cgpa, 0, 10) / 10} ${cx + radius / 3} ${cy + radius * clamp(cgpa, 0, 10) / 10} ${cx + radius * clamp(cgpa, 0, 10) / 10} ${cy} c S`);
+      text(c, fmt(cgpa), cx - 28, cy - 6, 26, "B", navy);
+      text(c, "out of 10", cx - 22, cy - 24, 9, "R", "60707C");
+      circle(c, cx + 46, cy + 34, 8, coral);
+    }
+
+    function drawPdfSgpaChart(c, x, y, w, h, semesters, teal, coral) {
+      rect(c, x, y, w, h, "FFFFFF");
+      text(c, "SGPA Trend", x + 12, y + h - 20, 11, "B", "19324D");
+      const chartX = x + 20;
+      const chartY = y + 26;
+      const chartW = w - 38;
+      const chartH = h - 58;
+      for (let i = 0; i <= 3; i += 1) strokeLine(c, chartX, chartY + chartH * i / 3, chartX + chartW, chartY + chartH * i / 3, "E7EDF2");
+      const points = semesters.map((semester, index) => ({
+        x: semesters.length === 1 ? chartX + chartW / 2 : chartX + chartW * index / (semesters.length - 1),
+        y: chartY + chartH - chartH * clamp(semester.sgpa, 0, 10) / 10,
+        value: semester.sgpa
+      }));
+      points.forEach((point, index) => {
+        if (index > 0) strokeLine(c, points[index - 1].x, points[index - 1].y, point.x, point.y, teal, 2.5);
+        circle(c, point.x, point.y, 4, index % 2 ? coral : teal);
+      });
+    }
+
+    function drawPdfMarksChart(c, x, y, w, h, semesters, amber, teal) {
+      rect(c, x, y, w, h, "FFFFFF");
+      text(c, "Marks Percent", x + 12, y + h - 20, 11, "B", "19324D");
+      const chartX = x + 20;
+      const chartY = y + 24;
+      const chartW = w - 40;
+      const chartH = h - 58;
+      const gap = 8;
+      const barW = Math.max(10, (chartW - gap * Math.max(0, semesters.length - 1)) / Math.max(1, semesters.length));
+      semesters.forEach((semester, index) => {
+        const percent = semester.maxMarks ? clamp((semester.marks / semester.maxMarks) * 100, 0, 100) : 0;
+        const bh = chartH * percent / 100;
+        const bx = chartX + index * (barW + gap);
+        rect(c, bx, chartY, barW, bh, index % 2 ? teal : amber);
+        text(c, fmt(percent, 0), bx, chartY + bh + 6, 7, "B", "19324D");
+      });
+    }
+
+    function tableHeader(c, x, y, w, headers) {
+      rect(c, x, y, w, 20, "19324D");
+      const col = w / headers.length;
+      headers.forEach((header, index) => text(c, header, x + 8 + index * col, y + 7, 8, "B", "FFFFFF"));
+    }
+
+    function tableRow(c, x, y, w, cells, index, fontSize = 8) {
+      rect(c, x, y, w, 18, index % 2 ? "F7F9FC" : "FFFFFF");
+      const col = w / cells.length;
+      cells.forEach((cell, cellIndex) => text(c, String(cell), x + 8 + cellIndex * col, y + 6, fontSize, cellIndex === 0 ? "B" : "R", cellIndex === 0 ? "19324D" : "172026"));
+    }
+
+    $("#addSemester").addEventListener("click", addSemester);
+    $("#addSemesterTop").addEventListener("click", addSemester);
+    $("#addPreviousSgpa").addEventListener("click", addPreviousSgpa);
+    $("#downloadPdf").addEventListener("click", downloadPdf);
+    $("#downloadPdfTop").addEventListener("click", downloadPdf);
+    $("#printPage").addEventListener("click", () => window.print());
+    $("#resetAll").addEventListener("click", resetAll);
+    $("#gradeSettingsBtn").addEventListener("click", openGradeDialog);
+    $("#saveGrades").addEventListener("click", saveGrades);
+    ["studentName", "rollNumber", "courseName", "percentageFormula"].forEach((id) => {
+      $(`#${id}`).addEventListener("input", () => {
+        updateResults();
+        saveLocal();
+      });
+    });
+    $("#themeSelect").addEventListener("input", () => {
+      setTheme($("#themeSelect").value);
+      saveLocal();
+    });
+
+    if (!loadLocal()) {
+      setTheme("aurora");
+      ensureTwoSemesters();
+      render();
+    } else {
+      render();
+    }
+  </script>
+</body>
+</html>
